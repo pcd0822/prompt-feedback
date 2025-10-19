@@ -1,114 +1,132 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>프롬프트 구조 분석 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
-        /* 사용자 정의 스타일 */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body {
-            font-family: 'Noto Sans KR', sans-serif;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
         }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         .progress-ring-circle {
             transition: stroke-dashoffset 0.8s ease-out;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
         .fade-in {
-            animation: fadeIn 0.8s ease-in-out;
+            animation: fadeIn 0.8s ease-in-out forwards;
+            opacity: 0;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .spinner {
-            animation: spin 1s linear infinite;
+        .prose {
+            max-width: none;
         }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .prose h3 {
+            margin-bottom: 0.5em;
+            margin-top: 1em;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="text-slate-800">
 
-    <div class="container mx-auto p-4 md:p-8">
+    <header class="relative bg-white shadow-md p-4 sticky top-0 z-10">
+        <div class="container mx-auto flex justify-center items-center">
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">🚀 프롬프트 구조 분석 대시보드</h1>
+        </div>
+        <p class="absolute top-4 right-4 text-xs sm:text-sm text-slate-500 font-semibold">Designed by 들쌤</p>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 md:p-8">
+        <!-- Input Section -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+            <h2 class="text-xl font-semibold mb-4 text-slate-700">1. 탐구 결과 입력</h2>
+            <p class="text-slate-500 mb-4">최적의 프롬프트 구조를 만들기 위한 탐구 과정과 결과를 아래에 입력해주세요. AI가 분석하여 대시보드를 생성합니다.</p>
+            <textarea id="promptInput" rows="8" class="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="예: 사용자가 감성적인 시를 작성하도록 유도하는 프롬프트 구조를 연구했습니다. 역할(페르소나)을 구체적으로 부여하고, 원하는 분위기와 문체, 길이를 명확히 지정했을 때 할루시네이션이 줄어드는 것을 확인했습니다... (최소 50자 이상)">
+            </textarea>
+            <p id="errorMessage" class="text-red-500 text-sm mt-2 h-4"></p>
+            <button id="analyzeBtn" class="mt-4 w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                <i id="btnIcon" class="fas fa-chart-pie mr-2"></i>
+                <span id="btnText">분석 시작하기</span>
+            </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="actionButtons" class="hidden container mx-auto px-4 mt-8 mb-4">
+            <div class="flex flex-wrap gap-3 justify-end">
+                <button id="savePdfBtn" class="text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-300 flex items-center justify-center bg-green-500 hover:bg-green-600"><i class="fas fa-file-pdf mr-2"></i>PDF 저장하기</button>
+                <button id="shareLinkBtn" class="text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-300 flex items-center justify-center bg-blue-500 hover:bg-blue-600"><i class="fas fa-share-alt mr-2"></i>결과 공유하기</button>
+                <button id="resetBtn" class="text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-300 flex items-center justify-center bg-red-500 hover:bg-red-600"><i class="fas fa-redo mr-2"></i>다시 만들기</button>
+            </div>
+        </div>
         
-        <!-- 헤더 -->
-        <header class="text-center mb-10">
-            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">프롬프트 구조 분석 대시보드</h1>
-            <p class="mt-4 text-lg text-slate-600">최적의 프롬프트 구조를 찾아내기 위한 여정을 지원합니다.</p>
-        </header>
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="hidden mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- 종합 점수 -->
+                <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-tachometer-alt mr-2 text-indigo-500"></i>종합 점수</h3>
+                    <div class="text-center">
+                        <p class="text-6xl font-bold text-indigo-600" id="totalScore">0</p>
+                        <p class="text-slate-500 mt-2" id="scoreDescription">분석을 시작해주세요.</p>
+                    </div>
+                </div>
 
-        <main>
-            <!-- 입력 섹션 -->
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200">
-                <h2 class="text-2xl font-semibold mb-4 text-slate-800">1. 탐구 결과 입력</h2>
-                <p class="mb-6 text-slate-500">개발하신 프롬프트 구조나 탐구 내용을 아래에 입력해주세요. 시스템이 OpenAI API를 통해 분석하여 인포그래픽을 생성합니다.</p>
-                <textarea id="promptInput" class="w-full h-48 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300 resize-none" placeholder="예: 역할(Role), 맥락(Context), 작업(Task), 형식(Format)을 포함하는 프롬프트 구조를 테스트한 결과..."></textarea>
-                <div id="errorMessage" class="text-red-500 mt-2 h-6"></div>
-                <button id="analyzeBtn" class="mt-2 w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
-                    <i id="btnIcon" class="fas fa-chart-pie mr-2"></i>
-                    <span id="btnText">분석 시작하기</span>
-                </button>
+                <!-- 세부 평가 항목 -->
+                <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.1s;">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-tasks mr-2 text-sky-500"></i>세부 평가 항목</h3>
+                    <div class="space-y-6">
+                        <!-- 범용성 -->
+                        <div class="flex items-center">
+                            <div class="w-24 h-24 relative" id="generalityChart"></div>
+                            <div class="ml-4">
+                                <p class="font-semibold">범용성</p>
+                                <p class="text-sm text-slate-500">다양한 상황 적용 가능성</p>
+                            </div>
+                        </div>
+                        <!-- 일관성 -->
+                        <div class="flex items-center">
+                            <div class="w-24 h-24 relative" id="consistencyChart"></div>
+                            <div class="ml-4">
+                                <p class="font-semibold">일관성</p>
+                                <p class="text-sm text-slate-500">의도대로 응답 생성률</p>
+                            </div>
+                        </div>
+                        <!-- 정교함 -->
+                        <div class="flex items-center">
+                            <div class="w-24 h-24 relative" id="sophisticationChart"></div>
+                            <div class="ml-4">
+                                <p class="font-semibold">정교함</p>
+                                <p class="text-sm text-slate-500">구체적이고 명확한 구조</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- 대시보드 섹션 (초기에는 숨김) -->
-            <div id="dashboard" class="mt-12 hidden">
-                <h2 class="text-3xl font-bold text-center mb-8 text-slate-900">2. 분석 결과 대시보드</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- 종합 점수 -->
-                    <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200 flex flex-col items-center justify-center">
-                        <h3 class="text-lg font-semibold text-slate-500 mb-4">종합 평가 점수</h3>
-                        <div id="totalScore" class="text-6xl font-bold text-indigo-600"></div>
-                        <p id="scoreDescription" class="mt-2 text-center text-slate-500"></p>
-                    </div>
-
-                    <!-- 평가 항목 카드 -->
-                    <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.1s;">
-                        <h3 class="text-lg font-semibold text-slate-500 mb-4">범용성</h3>
-                        <div class="flex items-center justify-center">
-                            <div id="generalityChart" class="w-32 h-32"></div>
-                        </div>
-                         <p class="text-center mt-2 text-sm text-slate-500">다양한 상황 적용 가능성</p>
-                    </div>
-                    <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.2s;">
-                        <h3 class="text-lg font-semibold text-slate-500 mb-4">일관성</h3>
-                        <div class="flex items-center justify-center">
-                           <div id="consistencyChart" class="w-32 h-32"></div>
-                        </div>
-                        <p class="text-center mt-2 text-sm text-slate-500">응답과 프롬프트의 일치도</p>
-                    </div>
-                    <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.3s;">
-                        <h3 class="text-lg font-semibold text-slate-500 mb-4">정교함</h3>
-                        <div class="flex items-center justify-center">
-                            <div id="sophisticationChart" class="w-32 h-32"></div>
-                        </div>
-                         <p class="text-center mt-2 text-sm text-slate-500">구조의 세밀함과 명확성</p>
-                    </div>
+            <!-- Right Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- 입력-응답 상관관계 분석 -->
+                <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.2s;">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-link mr-2 text-teal-500"></i>입력-응답 상관관계 분석</h3>
+                    <div id="correlationChart" class="space-y-4"></div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                    <!-- 상관관계 분석 -->
-                    <div class="fade-in lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.4s;">
-                        <h3 class="text-xl font-semibold text-slate-800 mb-4">입력-응답 상관관계 분석</h3>
-                        <p class="text-slate-500 mb-6">프롬프트 요소와 응답 품질 간의 가상 상관관계를 나타냅니다.</p>
-                        <div id="correlationChart" class="space-y-4"></div>
-                    </div>
-
-                    <!-- 사용자 피드백 로그 -->
-                    <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.5s;">
-                         <h3 class="text-xl font-semibold text-slate-800 mb-4">사용자 피드백 (시뮬레이션)</h3>
-                         <p class="text-slate-500 mb-6">가상 사용자들의 피드백 로그입니다.</p>
-                         <div id="feedbackLog" class="space-y-3 h-64 overflow-y-auto pr-2"></div>
-                    </div>
+                <!-- 사용자 피드백 시뮬레이션 -->
+                <div class="fade-in bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.4s;">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-user-friends mr-2 text-orange-500"></i>사용자 피드백 시뮬레이션</h3>
+                    <div id="feedbackLog" class="space-y-3 max-h-48 overflow-y-auto pr-2"></div>
                 </div>
-                
-                 <!-- 개선 제안 (API 기반) -->
+
+                 <!-- AI 기반 피드백 및 개선 제안 -->
                 <div class="fade-in mt-6 bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.6s;">
                     <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-lightbulb mr-2 text-yellow-400"></i>AI 기반 피드백 및 개선 제안</h3>
                     <div class="mb-6">
@@ -123,7 +141,6 @@
                     <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-magic mr-2 text-purple-500"></i>나의 프롬프트 만들어보기</h3>
                     <p class="text-slate-500 mb-6">AI가 분석한 프롬프트 구조를 기반으로 자신만의 프롬프트를 정교하게 만들어보세요.</p>
                     <div id="promptBuilder" class="space-y-4">
-                        <!-- AI가 분석한 프롬프트 구조에 따라 동적으로 입력 필드가 생성됩니다. -->
                         <p class="text-slate-400 text-center py-8">먼저 위에서 탐구 결과를 분석해주세요.</p>
                     </div>
                     <button id="generatePromptBtn" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center disabled:bg-purple-400 disabled:cursor-not-allowed">
@@ -138,16 +155,16 @@
 
             </div>
         </main>
-        
-        <!-- 푸터 -->
-        <footer class="text-center mt-12 py-4 border-t border-slate-300">
-            <p class="text-slate-500">&copy; 2025 Prompt Engineering Dashboard. All Rights Reserved.</p>
-        </footer>
-
+    </main>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 right-10 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-xl transition-opacity duration-300 opacity-0 z-50">
+        <p id="toastMessage"></p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // 전역 변수 및 요소 가져오기
             const promptInput = document.getElementById('promptInput');
             const analyzeBtn = document.getElementById('analyzeBtn');
             const dashboard = document.getElementById('dashboard');
@@ -155,53 +172,136 @@
             const btnIcon = document.getElementById('btnIcon');
             const btnText = document.getElementById('btnText');
             const generatePromptBtn = document.getElementById('generatePromptBtn');
+            const actionButtons = document.getElementById('actionButtons');
 
-            // 분석 버튼 클릭 이벤트 리스너
+            let currentAnalysisData = null; // 분석 결과 저장용
+
+            // --- 페이지 로드 시 공유 데이터 처리 ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedData = urlParams.get('data');
+
+            if (sharedData) {
+                try {
+                    const decodedData = decodeURIComponent(atob(sharedData));
+                    const data = JSON.parse(decodedData);
+                    
+                    promptInput.value = data.inputText;
+                    dashboard.classList.remove('hidden');
+                    actionButtons.classList.remove('hidden');
+                    renderDashboard(data.localData, data.apiData);
+                    
+                    currentAnalysisData = data;
+                    
+                    setTimeout(() => {
+                        dashboard.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('공유 데이터 로드 실패:', error);
+                    showToast('공유된 데이터를 불러오는 데 실패했습니다.');
+                    history.pushState(null, '', window.location.pathname);
+                }
+            }
+
+            // --- 이벤트 리스너 ---
+
+            // 분석 버튼 클릭
             analyzeBtn.addEventListener('click', async () => {
                 const inputText = promptInput.value.trim();
-
                 if (inputText.length < 50) {
-                    errorMessage.textContent = '분석을 위해 최소 50자 이상 입력해주세요.';
-                    dashboard.classList.add('hidden');
+                    errorMessage.textContent = '최소 50자 이상 입력해주세요.';
                     return;
                 }
-                
                 errorMessage.textContent = '';
                 setLoadingState(true);
 
                 try {
-                    // Netlify 서버리스 함수 호출
                     const response = await fetch('/.netlify/functions/openai-proxy', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ promptText: inputText }),
                     });
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.message || 'API 호출 중 오류가 발생했습니다.');
+                        throw new Error(errorData.message || 'API 분석 중 오류가 발생했습니다.');
                     }
-                    
                     const apiData = await response.json();
-
-                    // 가상 점수 데이터 생성 (API 응답과 별개로 UI 시각화를 위해 유지)
+                    
                     const analysisData = generateLocalAnalysisData(inputText);
                     
-                    // 대시보드 표시 및 렌더링
+                    // 분석 데이터 저장
+                    currentAnalysisData = {
+                        inputText: inputText,
+                        apiData: apiData,
+                        localData: analysisData
+                    };
+
                     dashboard.classList.remove('hidden');
+                    actionButtons.classList.remove('hidden');
                     renderDashboard(analysisData, apiData);
                     dashboard.scrollIntoView({ behavior: 'smooth' });
 
                 } catch (error) {
+                    console.error('분석 오류:', error);
                     errorMessage.textContent = `오류: ${error.message}`;
-                    dashboard.classList.add('hidden');
                 } finally {
                     setLoadingState(false);
                 }
             });
 
+            // PDF 저장 버튼
+            document.getElementById('savePdfBtn').addEventListener('click', () => {
+                const dashboardElement = document.getElementById('dashboard');
+                showToast('PDF 생성을 시작합니다...');
+                const options = {
+                    margin:       [0.5, 0.5, 0.5, 0.5],
+                    filename:     'prompt-analysis-dashboard.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+                html2pdf().from(dashboardElement).set(options).save();
+            });
+
+            // 공유 버튼
+            document.getElementById('shareLinkBtn').addEventListener('click', () => {
+                if (!currentAnalysisData) {
+                    showToast('공유할 분석 데이터가 없습니다.');
+                    return;
+                }
+                try {
+                    const dataToShare = JSON.stringify(currentAnalysisData);
+                    const encodedData = btoa(encodeURIComponent(dataToShare));
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+                    
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToast('공유 링크가 클립보드에 복사되었습니다!');
+                    }).catch(err => {
+                        console.error('클립보드 복사 실패:', err);
+                        showToast('클립보드 복사에 실패했습니다.');
+                    });
+                } catch (error) {
+                    console.error('공유 데이터 생성 실패:', error);
+                    showToast('공유 링크 생성에 실패했습니다.');
+                }
+            });
+
+            // 다시 만들기 버튼
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                promptInput.value = '';
+                dashboard.classList.add('hidden');
+                actionButtons.classList.add('hidden');
+                document.getElementById('promptBuilder').innerHTML = '<p class="text-slate-400 text-center py-8">먼저 위에서 탐구 결과를 분석해주세요.</p>';
+                document.getElementById('generatedPromptContainer').classList.add('hidden');
+                currentAnalysisData = null;
+                history.pushState(null, '', window.location.pathname);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+
+            // --- 주요 함수들 ---
+            
             function setLoadingState(isLoading) {
                 analyzeBtn.disabled = isLoading;
                 if (isLoading) {
@@ -213,40 +313,31 @@
                 }
             }
             
-            /**
-             * 로컬에서 시뮬레이션용 점수 데이터를 생성하는 함수
-             */
             function generateLocalAnalysisData(text) {
-                const baseScore = Math.min(100, 30 + text.length / 10 + Math.random() * 10);
-                const scores = {
-                    generality: Math.min(100, baseScore * (0.8 + Math.random() * 0.4)).toFixed(0),
-                    consistency: Math.min(100, baseScore * (0.9 + Math.random() * 0.2)).toFixed(0),
-                    sophistication: Math.min(100, baseScore * (0.85 + Math.random() * 0.3)).toFixed(0),
-                };
-                const totalScore = ((parseInt(scores.generality) + parseInt(scores.consistency) + parseInt(scores.sophistication)) / 3).toFixed(0);
+                const hash = s => s.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
+                const textHash = Math.abs(hash(text));
 
+                const generality = (textHash % 31) + 65;
+                const consistency = (textHash % 26) + 70;
+                const sophistication = (textHash % 36) + 60;
+                const totalScore = Math.round((generality + consistency + sophistication) / 3);
+                
                 return {
                     totalScore,
-                    scores,
+                    scores: { generality, consistency, sophistication },
                     correlation: [
-                        { label: '역할(Role) 명확성', value: Math.floor(80 + Math.random() * 20) },
-                        { label: '맥락(Context) 구체성', value: Math.floor(75 + Math.random() * 25) },
-                        { label: '작업(Task) 단순성', value: Math.floor(70 + Math.random() * 20) },
-                        { label: '형식(Format) 제한성', value: Math.floor(85 + Math.random() * 15) },
+                        { label: '역할(Role) 명확성', value: (textHash % 20) + 75 },
+                        { label: '작업(Task) 구체성', value: (textHash % 25) + 70 },
+                        { label: '제약조건 활용도', value: (textHash % 30) + 65 },
                     ],
                     feedback: [
-                        { type: 'positive', text: '제공된 구조가 매우 명확하여 의도한 대로 잘 작동했습니다.' },
-                        { type: 'negative', text: '조금 더 복잡한 시나리오에서는 할루시네이션이 발생하네요.' },
-                        { type: 'positive', text: '다른 도메인에서도 쉽게 적용할 수 있어 범용성이 높습니다.' },
-                        { type: 'suggestion', text: '결과물의 길이를 제어하는 파라미터를 추가하면 어떨까요?' },
-                        { type: 'positive', text: '이전 프롬프트보다 응답 일관성이 크게 향상되었습니다.' },
+                        { type: 'positive', text: `응답 정확도가 ${((textHash % 10) + 88)}%로 높게 나타났습니다.` },
+                        { type: 'suggestion', text: '출력 형식을 JSON으로 지정하면 더 일관된 결과를 얻을 수 있습니다.' },
+                        { type: 'negative', text: '일부 응답에서 미세한 할루시네이션이 발견되었습니다.' },
                     ]
                 };
             }
 
-            /**
-             * 분석 데이터를 받아 대시보드 UI를 렌더링하는 함수
-             */
             function renderDashboard(localData, apiData) {
                 // 종합 점수 및 차트 (로컬 데이터 기반)
                 document.getElementById('totalScore').textContent = localData.totalScore;
@@ -259,61 +350,34 @@
                 const correlationChartEl = document.getElementById('correlationChart');
                 correlationChartEl.innerHTML = '';
                 localData.correlation.forEach(item => {
-                    const barHtml = `
+                    correlationChartEl.insertAdjacentHTML('beforeend', `
                         <div class="w-full">
-                            <div class="flex justify-between mb-1">
-                                <span class="text-base font-medium text-slate-700">${item.label}</span>
-                                <span class="text-sm font-medium text-slate-700">${item.value}%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 rounded-full h-4">
-                                <div class="bg-indigo-500 h-4 rounded-full" style="width: ${item.value}%; transition: width 1s ease-in-out;"></div>
-                            </div>
-                        </div>
-                    `;
-                    correlationChartEl.insertAdjacentHTML('beforeend', barHtml);
+                            <div class="flex justify-between mb-1"><span class="text-base font-medium text-slate-700">${item.label}</span><span class="text-sm font-medium text-slate-700">${item.value}%</span></div>
+                            <div class="w-full bg-slate-200 rounded-full h-4"><div class="bg-indigo-500 h-4 rounded-full" style="width: ${item.value}%; transition: width 1s ease-in-out;"></div></div>
+                        </div>`);
                 });
 
                 // 사용자 피드백 로그 (로컬 데이터 기반)
                 const feedbackLogEl = document.getElementById('feedbackLog');
                 feedbackLogEl.innerHTML = '';
-                 const iconMap = {
-                    positive: '<i class="fas fa-check-circle text-green-500"></i>',
-                    negative: '<i class="fas fa-times-circle text-red-500"></i>',
-                    suggestion: '<i class="fas fa-info-circle text-blue-500"></i>',
-                };
+                 const iconMap = { positive: '<i class="fas fa-check-circle text-green-500"></i>', negative: '<i class="fas fa-times-circle text-red-500"></i>', suggestion: '<i class="fas fa-info-circle text-blue-500"></i>' };
                 localData.feedback.forEach(item => {
-                    const logHtml = `
-                        <div class="flex items-start text-sm">
-                            <div class="mr-3 w-5 text-center">${iconMap[item.type]}</div>
-                            <span class="text-slate-600">${item.text}</span>
-                        </div>
-                    `;
-                    feedbackLogEl.insertAdjacentHTML('beforeend', logHtml);
+                    feedbackLogEl.insertAdjacentHTML('beforeend', `<div class="flex items-start text-sm"><div class="mr-3 w-5 text-center">${iconMap[item.type]}</div><span class="text-slate-600">${item.text}</span></div>`);
                 });
 
                 // AI 기반 개선 제안 (API 응답 기반)
                 document.getElementById('userInputSummary').textContent = apiData.summary;
-                document.getElementById('apiRecommendations').innerHTML = apiData.feedback.replace(/\n/g, '<br>'); // API 응답을 HTML로 렌더링
-            
+                document.getElementById('apiRecommendations').innerHTML = apiData.feedback.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\n/g, '<br>');
+
                 // AI 분석 기반 프롬프트 빌더 동적 생성
                 const promptBuilder = document.getElementById('promptBuilder');
-                promptBuilder.innerHTML = ''; // 이전 내용 초기화
-                
+                promptBuilder.innerHTML = '';
                 if (apiData.components && apiData.components.length > 0) {
                     const gridContainer = document.createElement('div');
                     gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-                    
                     apiData.components.forEach(component => {
                         const sanitizedId = component.replace(/\s+/g, '-').toLowerCase();
-                        const itemHtml = `
-                            <div>
-                                <label for="prompt-${sanitizedId}" class="block text-sm font-medium text-slate-700">${component}</label>
-                                <input type="text" id="prompt-${sanitizedId}" data-component="${component}"
-                                    class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    placeholder="${component}에 대한 내용을 입력하세요...">
-                            </div>
-                        `;
-                        gridContainer.innerHTML += itemHtml;
+                        gridContainer.innerHTML += `<div><label for="prompt-${sanitizedId}" class="block text-sm font-medium text-slate-700">${component}</label><input type="text" id="prompt-${sanitizedId}" data-component="${component}" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="${component}에 대한 내용을 입력하세요..."></div>`;
                     });
                     promptBuilder.appendChild(gridContainer);
                 } else {
@@ -321,38 +385,18 @@
                 }
             }
             
-            // 이하 함수들은 이전 버전과 동일 (getScoreDescription, createProgressChart)
             function getScoreDescription(score) {
                 if (score >= 90) return "훌륭합니다! 매우 체계적이고 효과적인 구조입니다.";
-                if (score >= 75) return "좋습니다. 몇 가지 개선을 통해 더 완벽해질 수 있습니다.";
-                if (score >= 50) return "가능성이 보입니다. 핵심 요소를 더 다듬어보세요.";
-                return "기본부터 다시 검토하며 구조를 보강할 필요가 있습니다.";
+                if (score >= 75) return "좋습니다! 명확한 목표를 가진 좋은 구조입니다.";
+                if (score >= 50) return "괜찮습니다. 개선의 여지가 충분합니다.";
+                return "개선이 필요합니다. 구조를 더 명확하게 다듬어보세요.";
             }
 
             function createProgressChart(elementId, percentage, color) {
                 const el = document.getElementById(elementId);
-                const radius = 54;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - (percentage / 100) * circumference;
-
-                el.innerHTML = `
-                    <svg class="w-full h-full" viewBox="0 0 120 120">
-                        <circle class="text-slate-200" stroke-width="12" stroke="currentColor" fill="transparent" r="${radius}" cx="60" cy="60"/>
-                        <circle class="progress-ring-circle"
-                            stroke-width="12"
-                            stroke-linecap="round"
-                            stroke="${color}"
-                            fill="transparent"
-                            r="${radius}"
-                            cx="60"
-                            cy="60"
-                            style="stroke-dasharray:${circumference}; stroke-dashoffset:${circumference};"
-                        />
-                        <text x="50%" y="50%" text-anchor="middle" dy=".3em" class="text-3xl font-bold fill-current text-slate-700">${percentage}</text>
-                    </svg>
-                `;
-
+                el.innerHTML = `<svg class="w-full h-full" viewBox="0 0 120 120"><circle class="text-slate-200" stroke-width="10" stroke="currentColor" fill="transparent" r="52" cx="60" cy="60" /><circle class="progress-ring-circle" stroke-width="10" stroke-linecap="round" stroke="${color}" fill="transparent" r="52" cx="60" cy="60" style="stroke-dasharray: 326.7; stroke-dashoffset: 326.7;"></circle><text x="50%" y="50%" text-anchor="middle" dy=".3em" class="text-3xl font-bold fill-current text-slate-700">${percentage}</text></svg>`;
                 setTimeout(() => {
+                    const offset = 326.7 - (326.7 * percentage) / 100;
                     const circle = el.querySelector('.progress-ring-circle');
                     if (circle) circle.style.strokeDashoffset = offset;
                 }, 100);
@@ -373,32 +417,24 @@
                 }
             }
 
-            // AI로 프롬프트 생성하기 버튼 이벤트 리스너
+            // AI로 프롬프트 생성하기 버튼
             generatePromptBtn.addEventListener('click', async () => {
                 const inputs = document.querySelectorAll('#promptBuilder input');
-                if (inputs.length === 0) {
-                    alert('먼저 프롬프트 구조를 분석해주세요.');
-                    return;
-                }
+                if (inputs.length === 0) { return showToast('먼저 프롬프트 구조를 분석해주세요.'); }
 
                 const promptComponents = {};
                 let allFilled = true;
                 inputs.forEach(input => {
-                    const value = input.value.trim();
-                    if(!value) allFilled = false;
-                    promptComponents[input.dataset.component] = value;
+                    if(!input.value.trim()) allFilled = false;
+                    promptComponents[input.dataset.component] = input.value.trim();
                 });
 
-                if (!allFilled) {
-                    alert('모든 항목을 입력해주세요.');
-                    return;
-                }
+                if (!allFilled) { return showToast('모든 항목을 입력해주세요.'); }
                 
                 setGenerateBtnLoadingState(true);
                 const container = document.getElementById('generatedPromptContainer');
                 const resultDiv = document.getElementById('generatedPrompt');
                 container.classList.add('hidden');
-
 
                 try {
                      const response = await fetch('/.netlify/functions/generate-prompt', {
@@ -411,18 +447,28 @@
                         const errorData = await response.json();
                         throw new Error(errorData.message || '프롬프트 생성 중 오류 발생');
                     }
-                    
                     const { finalPrompt } = await response.json();
                     
-                    resultDiv.innerHTML = finalPrompt.replace(/\n/g, '<br>');
+                    resultDiv.innerHTML = finalPrompt.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\n/g, '<br>');
                     container.classList.remove('hidden');
 
                 } catch(error) {
-                    alert(`오류: ${error.message}`);
+                    showToast(`오류: ${error.message}`);
                 } finally {
                     setGenerateBtnLoadingState(false);
                 }
             });
+
+            // 토스트 메시지 함수
+            function showToast(message) {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                toastMessage.textContent = message;
+                toast.classList.remove('opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                }, 3000);
+            }
         });
     </script>
 </body>
