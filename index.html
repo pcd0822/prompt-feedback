@@ -273,7 +273,17 @@
                 const correlationChartEl = document.getElementById('correlationChart');
                 correlationChartEl.innerHTML = '';
                 localData.correlation.forEach(item => {
-                    const barHtml = `...`; // 내용은 이전과 동일하므로 생략
+                    const barHtml = `
+                        <div class="w-full">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-base font-medium text-slate-700">${item.label}</span>
+                                <span class="text-sm font-medium text-slate-700">${item.value}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-4">
+                                <div class="bg-indigo-500 h-4 rounded-full" style="width: ${item.value}%; transition: width 1s ease-in-out;"></div>
+                            </div>
+                        </div>
+                    `;
                     correlationChartEl.insertAdjacentHTML('beforeend', barHtml);
                 });
 
@@ -286,7 +296,12 @@
                     suggestion: '<i class="fas fa-info-circle text-blue-500"></i>',
                 };
                 localData.feedback.forEach(item => {
-                    const logHtml = `...`; // 내용은 이전과 동일하므로 생략
+                    const logHtml = `
+                        <div class="flex items-start text-sm">
+                            <div class="mr-3 w-5 text-center">${iconMap[item.type]}</div>
+                            <span class="text-slate-600">${item.text}</span>
+                        </div>
+                    `;
                     feedbackLogEl.insertAdjacentHTML('beforeend', logHtml);
                 });
 
@@ -360,4 +375,5 @@
     </script>
 </body>
 </html>
+
 
