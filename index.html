@@ -112,42 +112,27 @@
                 <div class="fade-in mt-6 bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.6s;">
                     <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-lightbulb mr-2 text-yellow-400"></i>AI 기반 피드백 및 개선 제안</h3>
                     <div class="mb-6">
-                        <h4 class="font-semibold text-slate-600">입력 내용 요약:</h4>
+                        <h4 class="font-semibold text-slate-600">AI 요약:</h4>
                         <p id="userInputSummary" class="mt-2 p-4 bg-slate-50 rounded-lg text-slate-700 whitespace-pre-wrap"></p>
                     </div>
-                    <div id="apiRecommendations" class="space-y-3 text-slate-600"></div>
+                    <div id="apiRecommendations" class="space-y-3 text-slate-600 prose"></div>
                 </div>
 
                 <!-- 나의 프롬프트 만들어보기 -->
                 <div class="fade-in mt-6 bg-white p-6 rounded-2xl shadow-lg border border-slate-200" style="animation-delay: 0.7s;">
                     <h3 class="text-xl font-semibold text-slate-800 mb-4"><i class="fas fa-magic mr-2 text-purple-500"></i>나의 프롬프트 만들어보기</h3>
-                    <p class="text-slate-500 mb-6">분석된 프롬프트 구조를 기반으로 자신만의 프롬프트를 직접 만들어보세요.</p>
+                    <p class="text-slate-500 mb-6">AI가 분석한 프롬프트 구조를 기반으로 자신만의 프롬프트를 정교하게 만들어보세요.</p>
                     <div id="promptBuilder" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <label for="prompt-role" class="block text-sm font-medium text-slate-700">역할 (Role)</label>
-                                <input type="text" id="prompt-role" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="예: 30년차 웹 개발 전문가">
-                            </div>
-                            <div>
-                                <label for="prompt-context" class="block text-sm font-medium text-slate-700">맥락 (Context)</label>
-                                <input type="text" id="prompt-context" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="예: 사용자의 요구사항을 분석하여...">
-                            </div>
-                             <div>
-                                <label for="prompt-task" class="block text-sm font-medium text-slate-700">작업 (Task)</label>
-                                <input type="text" id="prompt-task" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="예: 단일 HTML 웹 앱 생성">
-                            </div>
-                            <div>
-                                <label for="prompt-format" class="block text-sm font-medium text-slate-700">형식 (Format)</label>
-                                <input type="text" id="prompt-format" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="예: Tailwind CSS 사용, 반응형 디자인">
-                            </div>
-                        </div>
+                        <!-- AI가 분석한 프롬프트 구조에 따라 동적으로 입력 필드가 생성됩니다. -->
+                        <p class="text-slate-400 text-center py-8">먼저 위에서 탐구 결과를 분석해주세요.</p>
                     </div>
-                    <button id="generatePromptBtn" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105 duration-300">
-                        <i class="fas fa-cogs mr-2"></i>나의 프롬프트 생성하기
+                    <button id="generatePromptBtn" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center disabled:bg-purple-400 disabled:cursor-not-allowed">
+                        <i id="generateBtnIcon" class="fas fa-cogs mr-2"></i>
+                        <span id="generateBtnText">AI로 프롬프트 생성하기</span>
                     </button>
                     <div id="generatedPromptContainer" class="mt-6 hidden">
-                        <h4 class="font-semibold text-slate-600">생성된 프롬프트:</h4>
-                        <textarea id="generatedPrompt" class="w-full h-32 mt-2 p-4 bg-slate-50 border border-slate-200 rounded-lg whitespace-pre-wrap" readonly></textarea>
+                        <h4 class="font-semibold text-slate-600">AI가 생성한 최종 프롬프트:</h4>
+                        <div id="generatedPrompt" class="w-full min-h-[8rem] mt-2 p-4 bg-slate-50 border border-slate-200 rounded-lg whitespace-pre-wrap prose"></div>
                     </div>
                 </div>
 
@@ -169,6 +154,7 @@
             const errorMessage = document.getElementById('errorMessage');
             const btnIcon = document.getElementById('btnIcon');
             const btnText = document.getElementById('btnText');
+            const generatePromptBtn = document.getElementById('generatePromptBtn');
 
             // 분석 버튼 클릭 이벤트 리스너
             analyzeBtn.addEventListener('click', async () => {
@@ -205,7 +191,7 @@
                     
                     // 대시보드 표시 및 렌더링
                     dashboard.classList.remove('hidden');
-                    renderDashboard(analysisData, inputText, apiData.feedback);
+                    renderDashboard(analysisData, apiData);
                     dashboard.scrollIntoView({ behavior: 'smooth' });
 
                 } catch (error) {
@@ -261,7 +247,7 @@
             /**
              * 분석 데이터를 받아 대시보드 UI를 렌더링하는 함수
              */
-            function renderDashboard(localData, inputText, apiFeedback) {
+            function renderDashboard(localData, apiData) {
                 // 종합 점수 및 차트 (로컬 데이터 기반)
                 document.getElementById('totalScore').textContent = localData.totalScore;
                 document.getElementById('scoreDescription').textContent = getScoreDescription(localData.totalScore);
@@ -306,11 +292,36 @@
                 });
 
                 // AI 기반 개선 제안 (API 응답 기반)
-                document.getElementById('userInputSummary').textContent = inputText;
-                document.getElementById('apiRecommendations').innerHTML = apiFeedback.replace(/\n/g, '<br>'); // API 응답을 HTML로 렌더링
+                document.getElementById('userInputSummary').textContent = apiData.summary;
+                document.getElementById('apiRecommendations').innerHTML = apiData.feedback.replace(/\n/g, '<br>'); // API 응답을 HTML로 렌더링
+            
+                // AI 분석 기반 프롬프트 빌더 동적 생성
+                const promptBuilder = document.getElementById('promptBuilder');
+                promptBuilder.innerHTML = ''; // 이전 내용 초기화
+                
+                if (apiData.components && apiData.components.length > 0) {
+                    const gridContainer = document.createElement('div');
+                    gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+                    
+                    apiData.components.forEach(component => {
+                        const sanitizedId = component.replace(/\s+/g, '-').toLowerCase();
+                        const itemHtml = `
+                            <div>
+                                <label for="prompt-${sanitizedId}" class="block text-sm font-medium text-slate-700">${component}</label>
+                                <input type="text" id="prompt-${sanitizedId}" data-component="${component}"
+                                    class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="${component}에 대한 내용을 입력하세요...">
+                            </div>
+                        `;
+                        gridContainer.innerHTML += itemHtml;
+                    });
+                    promptBuilder.appendChild(gridContainer);
+                } else {
+                    promptBuilder.innerHTML = '<p class="text-slate-400 text-center py-8">분석된 프롬프트 구조 요소가 없습니다. 다른 내용으로 시도해보세요.</p>';
+                }
             }
             
-            // 이하 함수들은 이전 버전과 동일 (getScoreDescription, createProgressChart, prompt builder 관련 로직)
+            // 이하 함수들은 이전 버전과 동일 (getScoreDescription, createProgressChart)
             function getScoreDescription(score) {
                 if (score >= 90) return "훌륭합니다! 매우 체계적이고 효과적인 구조입니다.";
                 if (score >= 75) return "좋습니다. 몇 가지 개선을 통해 더 완벽해질 수 있습니다.";
@@ -346,34 +357,74 @@
                     if (circle) circle.style.strokeDashoffset = offset;
                 }, 100);
             }
-
-            const generatePromptBtn = document.getElementById('generatePromptBtn');
-            generatePromptBtn.addEventListener('click', () => {
-                const role = document.getElementById('prompt-role').value.trim();
-                const context = document.getElementById('prompt-context').value.trim();
-                const task = document.getElementById('prompt-task').value.trim();
-                const format = document.getElementById('prompt-format').value.trim();
-
-                let finalPrompt = "";
-                if (role) finalPrompt += `# 역할:\n${role}\n\n`;
-                if (context) finalPrompt += `# 맥락:\n${context}\n\n`;
-                if (task) finalPrompt += `# 작업:\n${task}\n\n`;
-                if (format) finalPrompt += `# 형식:\n${format}\n\n`;
-
-                const container = document.getElementById('generatedPromptContainer');
-                const textarea = document.getElementById('generatedPrompt');
+            
+            function setGenerateBtnLoadingState(isLoading) {
+                const btn = document.getElementById('generatePromptBtn');
+                const icon = document.getElementById('generateBtnIcon');
+                const text = document.getElementById('generateBtnText');
                 
-                if (finalPrompt) {
-                    textarea.value = finalPrompt.trim();
-                    container.classList.remove('hidden');
+                btn.disabled = isLoading;
+                if(isLoading) {
+                    text.textContent = 'AI가 프롬프트를 작성 중입니다...';
+                    icon.className = 'fas fa-spinner fa-spin mr-2';
                 } else {
-                    textarea.value = '';
-                    container.classList.add('hidden');
+                    text.textContent = 'AI로 프롬프트 생성하기';
+                    icon.className = 'fas fa-cogs mr-2';
+                }
+            }
+
+            // AI로 프롬프트 생성하기 버튼 이벤트 리스너
+            generatePromptBtn.addEventListener('click', async () => {
+                const inputs = document.querySelectorAll('#promptBuilder input');
+                if (inputs.length === 0) {
+                    alert('먼저 프롬프트 구조를 분석해주세요.');
+                    return;
+                }
+
+                const promptComponents = {};
+                let allFilled = true;
+                inputs.forEach(input => {
+                    const value = input.value.trim();
+                    if(!value) allFilled = false;
+                    promptComponents[input.dataset.component] = value;
+                });
+
+                if (!allFilled) {
+                    alert('모든 항목을 입력해주세요.');
+                    return;
+                }
+                
+                setGenerateBtnLoadingState(true);
+                const container = document.getElementById('generatedPromptContainer');
+                const resultDiv = document.getElementById('generatedPrompt');
+                container.classList.add('hidden');
+
+
+                try {
+                     const response = await fetch('/.netlify/functions/generate-prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ components: promptComponents }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || '프롬프트 생성 중 오류 발생');
+                    }
+                    
+                    const { finalPrompt } = await response.json();
+                    
+                    resultDiv.innerHTML = finalPrompt.replace(/\n/g, '<br>');
+                    container.classList.remove('hidden');
+
+                } catch(error) {
+                    alert(`오류: ${error.message}`);
+                } finally {
+                    setGenerateBtnLoadingState(false);
                 }
             });
         });
     </script>
 </body>
 </html>
-
 
