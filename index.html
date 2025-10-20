@@ -182,7 +182,8 @@
 
             if (sharedData) {
                 try {
-                    const decodedData = decodeURIComponent(atob(sharedData));
+                    // btoa/atob를 사용하지 않고 표준 URIComponent 함수만 사용하여 안정성 향상
+                    const decodedData = decodeURIComponent(sharedData);
                     const data = JSON.parse(decodedData);
                     
                     promptInput.value = data.inputText;
@@ -272,7 +273,8 @@
                 }
                 try {
                     const dataToShare = JSON.stringify(currentAnalysisData);
-                    const encodedData = btoa(encodeURIComponent(dataToShare));
+                    // btoa를 제거하고 표준 encodeURIComponent만 사용하여 URL 안정성 확보
+                    const encodedData = encodeURIComponent(dataToShare);
                     const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
                     
                     navigator.clipboard.writeText(shareUrl).then(() => {
